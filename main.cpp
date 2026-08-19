@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
-constexpr float EPSILON = 1e-4f;
+constexpr float EPSILON = 1e-5f;
 constexpr float PI = 3.14159265358979323846f;
 struct Vec3 {
   float x;
@@ -23,6 +23,7 @@ struct Vec3 {
   Vec3 operator*(Vec3 other) {
     return Vec3(x * other.x, y * other.y, z * other.z);
   }
+  Vec3 operator-() const { return Vec3(-x, -y, -z); }
   float length() const { return sqrt(x * x + y * y + z * z); }
 };
 inline Vec3 normalize(Vec3 v) { return v * (1.0f / v.length()); }
@@ -112,7 +113,7 @@ Vec3 Lo(Ray ray, const std::vector<Sphere> &spheres, int depth) {
     Vec3 Le = nearest_hit.color * 30.0f;
     return Le;
   }
-  Vec3 wo = normalize(ray.direction);
+  Vec3 wo = -ray.direction;
   Vec3 wi = random_in_hemisphere(nearest_hit.normal);
   float pdf_val = pdf(wi);
   Vec3 f_r_val = f_r(wi, wo, nearest_hit.color);
@@ -149,7 +150,7 @@ int main() {
   int done = 0;
 #pragma omp parallel for schedule(dynamic)
   for (int j = 0; j < image_height; j++) {
-    #pragma omp critical
+#pragma omp critical
     std::cout << '\r' << ++done * 100 / image_height << '%' << std::flush;
     for (int i = 0; i < image_width; i++) {
       Vec3 color;
@@ -159,7 +160,7 @@ int main() {
         u = (u - 0.5) * 2;
         v = (v - 0.5) * -2;
         Vec3 ray_direction = normalize(Vec3(u, v, -1));
-        Ray ray = Ray(Vec3(0.0f, 0.0f, 0.0f), ray_direction);
+        Ray ray = Ray(Vec3(), ray_direction);
         color = color + Lo(ray, spheres, 10);
       }
       color = color * (1.0f / samples_per_pixel);
