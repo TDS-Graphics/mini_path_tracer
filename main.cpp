@@ -4,6 +4,7 @@
 #include <random>
 #include <vector>
 constexpr float PI = 3.14159265358979323846f;
+constexpr float rr_prob = 0.9f;
 struct Vec3 {
   float x;
   float y;
@@ -159,7 +160,7 @@ Vec3 Ldir(Vec3 wo, Sphere const *light_sphereconst, HitInfo &hit_info,
   float cos_theta = dot(info.wk, hit_info.normal);
   Vec3 f_r_val = f_r(info.wk, wo, hit_info.sphere->color);
   float pdf_bsdf = bsdf_pdf(info.wk);
-  float w = mis_weight(info.pdf, pdf_bsdf);
+  float w = mis_weight(info.pdf, pdf_bsdf * rr_prob);
   Vec3 L_dir = f_r_val * info.Le * cos_theta * (w / info.pdf);
   return L_dir;
 }
@@ -167,7 +168,6 @@ Vec3 Lo(Ray ray, const std::vector<Sphere> &spheres, int depth,
         float prev_pdf) {
   if (depth <= 0)
     return Vec3();
-
   HitInfo nearest_hit;
   nearest_hit.t = 1e10;
   nearest_hit.is_hit = false;
@@ -186,12 +186,11 @@ Vec3 Lo(Ray ray, const std::vector<Sphere> &spheres, int depth,
     if (prev_pdf == 0.0f)
       return Le;
     float p_light = light_pdf(*light_sphere, ray.origin, nearest_hit.position);
-    float w = mis_weight(prev_pdf, p_light);
+    float w = mis_weight(prev_pdf * rr_prob, p_light);
     return Le * w;
   }
   Vec3 wo = -ray.direction;
   Vec3 L_dir = Ldir(wo, light_sphere, nearest_hit, spheres);
-  float rr_prob = 0.9f;
   if (random_float() > rr_prob)
     return L_dir;
   Vec3 wi = sample_bsdf(nearest_hit.normal);
@@ -206,7 +205,7 @@ Vec3 Lo(Ray ray, const std::vector<Sphere> &spheres, int depth,
   return L_dir + L_indir;
 }
 int main() {
-  int image_width = 516, image_height = 516;
+  int image_width = 1080, image_height = 1080;
   std::vector<Vec3> framebuffer(image_width * image_height);
   int samples_per_pixel = 1024;
   constexpr float R = 1000.0f;
