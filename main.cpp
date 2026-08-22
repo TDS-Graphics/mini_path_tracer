@@ -84,12 +84,18 @@ float random_float() {
 }
 Vec3 random_in_hemisphere(const Vec3 &normal) {
   float z = random_float();
-  float r = sqrt(1.0f - z * z);
+  float r = std::sqrt(1.0f - z * z);
   float phi = 2.0f * PI * random_float();
-  Vec3 dir(r * std::cos(phi), z, r * std::sin(phi));
-  if (dot(dir, normal) < 0.0f)
-    dir = dir * -1.0f;
-  return dir;
+  Vec3 local(r * std::cos(phi), r * std::sin(phi), z);
+  Vec3 tangent;
+  if (std::abs(normal.x) > 0.9f)
+    tangent = normalize(Vec3(0.0f, 1.0f, 0.0f) - normal * normal.y);
+  else
+    tangent = normalize(Vec3(1.0f, 0.0f, 0.0f) - normal * normal.x);
+  Vec3 bitangent = Vec3(normal.y * tangent.z - normal.z * tangent.y,
+                        normal.z * tangent.x - normal.x * tangent.z,
+                        normal.x * tangent.y - normal.y * tangent.x);
+  return normalize(tangent * local.x + bitangent * local.y + normal * local.z);
 }
 Vec3 f_r(Vec3 wi, Vec3 wo, Vec3 color) { return color * (1.0f / PI); }
 float pdf(Vec3 wi) { return 1.0f / (2.0f * PI); }
