@@ -17,3 +17,4 @@ clang++ -O3 -march=native -ffast-math -fopenmp -std=c++17 .\main.cpp -o renderer
 ./renderer
 ```
 
+    
